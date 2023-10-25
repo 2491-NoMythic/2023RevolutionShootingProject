@@ -16,4 +16,90 @@ public final class Constants {
   public static class OperatorConstants {
     public static final int kDriverControllerPort = 0;
   }
+  public final class Drivetrain {
+		//TimeDrive Values
+		public final static double timeDriveSpeed = .6;
+		public final static double timeDriveTime = 2;
+		
+		public final static double deadzone = 0.05;
+
+		// drive
+		public final static boolean useLinerAcceleration = true;
+		public final static double accelerationSpeed = .05;
+		public final static int driveTurnAxis = 2;
+		public final static int driveMainAxis = 1;
+		public final static int driveHorizontalAxis = 0;
+		public final static int driveTalonLeftMotor1 = 6;
+		public final static int driveTalonLeftMotor2 = 1;
+		public final static int driveTalonRightMotor1 = 2;
+		public final static int driveTalonRightMotor2 = 3;
+
+		// encoders
+		public final static double driveEncoderTicks = 2048.0; // encoder ticks per wheel rotation is 2048
+		public final static double driveWheelDiameter = 6.0; // inches
+		public final static double driveEncoderToInches = driveWheelDiameter * Math.PI / driveEncoderTicks; // makes
+		                                                                                                    // number
+		                                                                                                    // inches
+		public final static double driveEncoderToMeters = driveEncoderToInches * 39.3701; //39.3701 is the number of inches per meter
+		public final static double speedModeRPSToTalonOutput = driveEncoderTicks / 10.0;
+		public final static double driveEncoderVelocityToRPS = 1.0 / driveEncoderTicks * 10;
+		public final static double driveMaxSpeedRPS = 8.0;
+
+		//Distance
+		public final class DistanceDrive {
+			public final static double kP = 0;
+			public final static double kI = 0;
+			public final static double kD = 0;
+		}
+
+}
+public final static int PIGEON_PORT = 2491;
+public static class ShooterSpeeds {
+	public static final ShooterSpeeds stop = new ShooterSpeeds(0);
+	public static final ShooterSpeeds speed1 = new ShooterSpeeds(6500);
+	public static final ShooterSpeeds speed2 = new ShooterSpeeds(7000);
+	public static final ShooterSpeeds speed3 = new ShooterSpeeds(7500);
+	public static final ShooterSpeeds speed4 = new ShooterSpeeds(8300);
+
+	private double speed;
+
+	public ShooterSpeeds(double speed) {
+		this.speed = speed;
+	}
+
+	public double getSpeed() {
+		return speed;
+	}
+}
+
+// These go from low to high
+public static class ShooterHoodPositions {
+	public static final ShooterHoodPositions collapsed = new ShooterHoodPositions(0);
+	public static final ShooterHoodPositions position1 = new ShooterHoodPositions(70);
+	public static final ShooterHoodPositions position2 =  new ShooterHoodPositions(105);
+	public static final ShooterHoodPositions position3 =  new ShooterHoodPositions(120);
+	public static final ShooterHoodPositions position4 =  new ShooterHoodPositions(136);
+
+	private double angle;
+
+	public ShooterHoodPositions(double angle) {
+		this.angle = angle;
+	}
+
+	public double getAngle() {
+		return angle;
+	}
+}
+public final class Spindexer {
+	public static final int mainMotorID = 10;
+	public static final int outtakeMotorID = 13;
+	public static final int antiJamMotorID = 11;
+
+	public static final double intakeSpindexerSpeed = -.3;
+	public static final double shootingSpindexerSpeed = -.09;
+
+	public static final double shootingOutTakeSpeed = 1;
+	public static final double antiJamIntakeSpeed = .05;
+}
+
 }
