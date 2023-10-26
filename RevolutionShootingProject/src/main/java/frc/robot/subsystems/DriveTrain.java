@@ -2,6 +2,7 @@ package frc.robot.subsystems;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
@@ -14,17 +15,29 @@ import static frc.robot.Constants.*;
 import com.ctre.phoenixpro.hardware.Pigeon2;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.CustomDifferentialDriveOdometry;
+import frc.robot.LimelightValues;
+import frc.robot.RobotContainer;
 import frc.robot.Variables;
 
-public class DriveTrain extends SubsystemBase{
-    private WPI_TalonFX driveLeftMotor1,driveLeftMotor2,driveRightMotor1,driveRightMotor2;
+public class DriveTrain extends SubsystemBase {
+	private WPI_TalonFX driveLeftMotor1, driveLeftMotor2, driveRightMotor1, driveRightMotor2;
 	private Pigeon2 gyro;
-	private DifferentialDriveOdometry odometry;
+	private CustomDifferentialDriveOdometry odometry;
+	Limelight limelight = Limelight.getInstance();
+	private final Field2d m_field = new Field2d();
 
-	public DriveTrain(){
+	private Boolean forceTrustLimelight = false;
+	private Boolean useLimelight = true;
 
-		//creating motors
+	public DriveTrain() {
+
+		SmartDashboard.putData("Field", m_field);
+		SmartDashboard.putData("resetOdometry", new InstantCommand(() -> this.resetOdometry()));
+		// creating motors
 		driveLeftMotor1 = new WPI_TalonFX(driveTalonLeftMotor1);
 		driveLeftMotor2 = new WPI_TalonFX(driveTalonLeftMotor2);
 		driveRightMotor1 = new WPI_TalonFX(driveTalonRightMotor1);
@@ -33,11 +46,11 @@ public class DriveTrain extends SubsystemBase{
 		driveRightMotor1.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor);
 		driveLeftMotor1.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor);
 
-		//Setting Followers
+		// Setting Followers
 		driveLeftMotor2.follow(driveLeftMotor1);
 		driveRightMotor2.follow(driveRightMotor1);
 
-		//making right motors go right
+		// making right motors go right
 		driveRightMotor1.setInverted(true);
 		driveRightMotor2.setInverted(true);
 		driveLeftMotor1.setInverted(false);
@@ -48,98 +61,103 @@ public class DriveTrain extends SubsystemBase{
 		resetGyro();
 
 		resetEncoders();
-		odometry = new DifferentialDriveOdometry(Rotation2d.fromDegrees(gyro.getAngle()), driveEncoderToMeters, driveEncoderToMeters);
+		odometry = new CustomDifferentialDriveOdometry(Rotation2d.fromDegrees(gyro.getAngle()), driveEncoderToMeters,
+				driveEncoderToMeters);
 
 		SmartDashboard.putNumber("Rotate P", Variables.Drivetrain.RotationCommand.kP);
 		SmartDashboard.putNumber("Rotate I", Variables.Drivetrain.RotationCommand.kI);
 		SmartDashboard.putNumber("Rotate D", Variables.Drivetrain.RotationCommand.kD);
 	}
 
-	//gyro tingz
-	public void resetGyro(){
+	// gyro tingz
+	public void resetGyro() {
 		gyro.setYaw(0);
 	}
 
-	public double getGyroAngle(){
-		return(getRawGyroAngle() % 360 + 360) % 360;
+	public Rotation2d getGyroscopeRotation() {
+		return gyro.getRotation2d();
+	}
+
+	public double getGyroAngle() {
+		return (getRawGyroAngle() % 360 + 360) % 360;
 	}
 
 	public double getRawGyroAngle() {
 		return gyro.getAngle();
 	}
 
-	public WPI_TalonFX[] getTalonFX(){
-		return new WPI_TalonFX[] {driveLeftMotor1,driveLeftMotor2,driveRightMotor1,driveRightMotor2};
+	public WPI_TalonFX[] getTalonFX() {
+		return new WPI_TalonFX[] { driveLeftMotor1, driveLeftMotor2, driveRightMotor1, driveRightMotor2 };
 	}
 
-	//pose tingz
+	// pose tingz
 	public Pose2d getPose() {
 		return odometry.getPoseMeters();
 	}
 
-	//Returns wheel speeds of the robot
+	// Returns wheel speeds of the robot
 	public DifferentialDriveWheelSpeeds getWheelSpeeds() {
 		return new DifferentialDriveWheelSpeeds(getLeftEncoderRate(), getRightEncoderRate());
 	}
 
-	//Resets odometry to the specified pose
+	// Resets odometry to the specified pose
 	public void resetOdometry(Pose2d pose) {
 		resetEncoders();
-		odometry.resetPosition(gyro.getRotation2d(), driveEncoderToMeters, driveEncoderToMeters, pose);
+		odometry.resetPosition(gyro.getRotation2d(), getLeftEncoderDistanceMeeters(), getRightEncoderDistanceMeeters(),
+				pose);
 	}
 
-	//creating percent output for both right and left
-	public void drivePercentOutput(double speed){
+	// creating percent output for both right and left
+	public void drivePercentOutput(double speed) {
 		drivePercentOutput(speed, speed);
 	}
 
-	public void drivePercentOutput(double leftSpeed, double rightSpeed){
+	public void drivePercentOutput(double leftSpeed, double rightSpeed) {
 		driveLeftPercentOutput(leftSpeed);
 		driveRightPercentOutput(rightSpeed);
 	}
 
-	public void driveLeftPercentOutput(double speed){
+	public void driveLeftPercentOutput(double speed) {
 		driveLeftMotor1.set(ControlMode.PercentOutput, speed);
 	}
 
-	public void driveRightPercentOutput(double speed){
+	public void driveRightPercentOutput(double speed) {
 		driveRightMotor1.set(ControlMode.PercentOutput, speed);
 	}
-	
 
-	//createing voltge output for both right and left.	
-	public void driveVoltageOutput (double speed) {
+	// createing voltge output for both right and left.
+	public void driveVoltageOutput(double speed) {
 		driveVoltageOutput(speed, speed);
 	}
 
-	public void driveVoltageOutput (double leftSpeed, double rightSpeed) {
+	public void driveVoltageOutput(double leftSpeed, double rightSpeed) {
 		driveLeftVoltageOutput(leftSpeed);
 		driveRightVoltageOutput(rightSpeed);
 	}
 
-	public void driveLeftVoltageOutput (double speed) {
+	public void driveLeftVoltageOutput(double speed) {
 		driveLeftMotor1.setVoltage(speed);
 	}
 
-	public void driveRightVoltageOutput (double speed) {
+	public void driveRightVoltageOutput(double speed) {
 		driveRightMotor1.setVoltage(speed);
 	}
 
-	//creating drive velocity for both right and left
-	public void driveVelocity(double speed){
+	// creating drive velocity for both right and left
+	public void driveVelocity(double speed) {
 		driveVelocity(speed, speed);
 	}
 
-	public void driveVelocity(double leftSpeed, double rightSpeed){
+	public void driveVelocity(double leftSpeed, double rightSpeed) {
 		driveLeftVelocity(leftSpeed);
 		driveRightVelocity(rightSpeed);
 	}
 
-	public void driveLeftVelocity(double speed){
+	public void driveLeftVelocity(double speed) {
 		driveLeftMotor1.set(ControlMode.Velocity, speed);
 	}
 
-	public void driveRightVelocity(double speed){
+	public void driveRightVelocity(double speed) {
 		driveRightMotor1.set(ControlMode.Velocity, speed);
 	}
 
@@ -147,17 +165,17 @@ public class DriveTrain extends SubsystemBase{
 		return driveRightMotor1.get();
 	}
 
-	public double getLeftDriveSpeed(){
+	public double getLeftDriveSpeed() {
 		return driveLeftMotor1.get();
 	}
 
-	//robot can stop
-	public void stop(){
+	// robot can stop
+	public void stop() {
 		drivePercentOutput(0, 0);
 	}
 
-	public void breakModeOn(Boolean b){
-		if(b){
+	public void breakModeOn(Boolean b) {
+		if (b) {
 			driveLeftMotor1.setNeutralMode(NeutralMode.Brake);
 			driveRightMotor1.setNeutralMode(NeutralMode.Brake);
 		} else {
@@ -166,13 +184,21 @@ public class DriveTrain extends SubsystemBase{
 		}
 	}
 
-	//getting encoder distance and rate
-	public double getRightEncoderDistance() {
+	// getting encoder distance and rate
+	public double getRightEncoderDistanceInches() {
 		return driveRightMotor1.getSelectedSensorPosition(0) * driveEncoderToInches;
 	}
 
-	public double getLeftEncoderDistance() {
+	public double getLeftEncoderDistanceInches() {
 		return driveLeftMotor1.getSelectedSensorPosition(0) * driveEncoderToInches;
+	}
+
+	public double getLeftEncoderDistanceMeeters() {
+		return getLeftEncoderDistanceInches() * 39.37;
+	}
+
+	public double getRightEncoderDistanceMeeters() {
+		return getRightEncoderDistanceInches() * 39.7;
 	}
 
 	public double getLeftEncoderDistanceRaw() {
@@ -184,7 +210,7 @@ public class DriveTrain extends SubsystemBase{
 	}
 
 	public double getEncoderDistance() {
-		return ((getLeftEncoderDistance() + getRightEncoderDistance()) / 2);
+		return ((getLeftEncoderDistanceInches() + getRightEncoderDistanceInches()) / 2);
 	}
 
 	public double getLeftEncoderRate() {
@@ -204,6 +230,26 @@ public class DriveTrain extends SubsystemBase{
 		driveLeftMotor1.setSelectedSensorPosition(0);
 	}
 
+	public void updateOdometry() {
+		// odometry.updateWithTime(Timer.getFPGATimestamp(), getGyroscopeRotation());
+		odometry.update(getGyroscopeRotation(), getLeftEncoderDistanceMeeters(), getRightEncoderDistanceMeeters());
+	}
+
+	public void updateOdometryWithVision(Pose2d estematedPose, double timestampSeconds) {
+		odometry.directUpdate(estematedPose);
+		// odometry.updateOdometryWithVision();
+	}
+
+	public void resetOdometry() {
+		odometry.resetPosition(getGyroscopeRotation(), getLeftEncoderDistanceMeeters(),
+				getRightEncoderDistanceMeeters(), DRIVE_ODOMETRY_ORIGIN);
+	}
+
+	public void resetOdometryFromVision(Pose2d pose) {
+		odometry.resetPosition(getGyroscopeRotation(), getLeftEncoderDistanceMeeters(),
+				getRightEncoderDistanceMeeters(), pose);
+	}
+
 	@Override
 	public void periodic() {
 		SmartDashboard.putNumber("Angle", getGyroAngle());
@@ -218,7 +264,30 @@ public class DriveTrain extends SubsystemBase{
 		}
 		// This method will be called once per scheduler run
 
-		//Update the odometry in the periodic block
-		odometry.update(gyro.getRotation2d(), getLeftEncoderDistance(), getRightEncoderDistance()); //TODO Test encoder distance method, check gearing ratio between distanceand encoder
+		// Update the odometry in the periodic block
+		odometry.update(gyro.getRotation2d(), getLeftEncoderDistanceInches(), getRightEncoderDistanceInches()); // TODO
+																												// Test
+																												// encoder
+		// distance method,
+		// check gearing
+		// ratio between
+		// distanceand
+		// encoder
+
+		updateOdometry();
+		if (useLimelight) {
+			LimelightValues visionData = limelight.getLimelightValues();
+			Boolean isVisionValid = visionData.isResultValid;
+			Boolean isVisionTrustworthy = isVisionValid
+					&& visionData.isPoseTrustworthy(odometry.getPoseMeters());
+			SmartDashboard.putBoolean("visionValid", isVisionTrustworthy);
+			if (isVisionTrustworthy || (forceTrustLimelight && isVisionValid)) {
+				updateOdometryWithVision(visionData.getbotPose(), visionData.gettimestamp());
+			}
+		}
+		m_field.setRobotPose(odometry.getPoseMeters());
+		SmartDashboard.putNumber("Robot Angle", getGyroscopeRotation().getDegrees());
+		SmartDashboard.putString("Robot Location", getPose().getTranslation().toString());
+
 	}
 }

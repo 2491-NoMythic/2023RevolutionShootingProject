@@ -4,6 +4,9 @@
 
 package frc.robot;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+
 /**
  * The Constants class provides a convenient place for teams to hold robot-wide
  * numerical or boolean
@@ -21,7 +24,7 @@ public final class Constants {
 		public static final int kDriverControllerPort = 0;
 	}
 
-	public final class Drivetrain {
+	public static final class Drivetrain {
 		// TimeDrive Values
 		public final static double timeDriveSpeed = .6;
 		public final static double timeDriveTime = 2;
@@ -57,6 +60,9 @@ public final class Constants {
 			public final static double kI = 0;
 			public final static double kD = 0;
 		}
+
+		// odometry
+		public final static Pose2d DRIVE_ODOMETRY_ORIGIN = new Pose2d(5.0, 5.0, new Rotation2d());
 
 	}
 
