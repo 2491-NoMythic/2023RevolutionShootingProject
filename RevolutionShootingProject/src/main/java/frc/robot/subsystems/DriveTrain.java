@@ -6,7 +6,9 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.DemandType;
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
+import com.ctre.phoenix.motorcontrol.FollowerType;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 import com.ctre.phoenixpro.hardware.TalonFX;
@@ -167,6 +169,41 @@ public class DriveTrain extends SubsystemBase {
 
 	public double getLeftDriveSpeed() {
 		return driveLeftMotor1.get();
+	}
+
+	public void turnToDegrees(double degrees) {
+		turnToDegrees(degrees, true);
+	}
+
+	// I dont fully understand how thsi works, but it was made for Janace. and
+	// worked there.
+	// I think the "DemandType.AuxPID" means it gets the PID loop directly from
+	// pheonix tuner so we dont have to put it on dashboard.
+
+	// I think this is adding to the robot. or "robot relative".
+	// this means that if I ask it to tun 20degrees then it wont have a start
+	// position
+	// and instead it will just be adding or subtracting that angle.
+
+	public void turnToDegrees(double degrees, boolean relative) {
+		driveLeftMotor1.follow(driveRightMotor1, FollowerType.AuxOutput1);
+		driveLeftMotor1.follow(driveRightMotor1, FollowerType.AuxOutput1);
+		double targetNatitveUnits = degrees * DEGREES_TO_GYRO_TICKS;
+		if (relative) {
+			targetNatitveUnits += getRawGyroAngle() * DEGREES_TO_GYRO_TICKS;
+			driveRightMotor1.set(ControlMode.Position, driveRightMotor1.getSelectedSensorPosition(), DemandType.AuxPID,
+					targetNatitveUnits);
+		} else {
+			// this should now make it global?
+			targetNatitveUnits = degrees * DEGREES_TO_GYRO_TICKS;
+			driveRightMotor1.set(ControlMode.Position, driveRightMotor1.getSelectedSensorPosition(), DemandType.AuxPID,
+					targetNatitveUnits);
+		}
+	}
+
+	public boolean isAtTurnTarget() {
+		double error = driveRightMotor1.getClosedLoopError(1);
+		return (-TURN_ALLOWED_ERR_NATIVE_UNITS <= error) && (error <= TURN_ALLOWED_ERR_NATIVE_UNITS);
 	}
 
 	// robot can stop

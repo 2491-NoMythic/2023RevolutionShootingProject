@@ -25,6 +25,8 @@ public final class Constants {
 	}
 
 	public static final class Drivetrain {
+
+		public static final double DEGREES_TO_GYRO_TICKS = (8192.0 / 1) * (1 / 360.0);
 		// TimeDrive Values
 		public final static double timeDriveSpeed = .6;
 		public final static double timeDriveTime = 2;
@@ -63,6 +65,17 @@ public final class Constants {
 
 		// odometry
 		public final static Pose2d DRIVE_ODOMETRY_ORIGIN = new Pose2d(5.0, 5.0, new Rotation2d());
+
+		// Turning PID gains
+		public static final int TURN_SLOT = 1;
+		public static final double TURN_KP = 1.5;
+		public static final double TURN_KI = 0.1;
+		public static final double TURN_KD = 30;
+		public static final double TURN_KF = 0;
+		public static final double TURN_IZ = 40;
+		public static final double TURN_INT_ACCUM = 10000;
+		public static final int TURN_CLOSED_LOOP_TIMEOUT = 10;
+		public static final int TURN_ALLOWED_ERR_NATIVE_UNITS = 13;
 
 	}
 
